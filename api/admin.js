@@ -2,7 +2,7 @@ const { sb, send } = require('./_supabase');
 
 async function snapshot() {
   const [prizes, winners, drawLogs] = await Promise.all([
-    sb('/rest/v1/prizes?select=id,name,total_qty,remaining_qty,display_order,is_active&order=display_order.asc', { service: true }),
+    sb('/rest/v1/prizes?select=id,name,total_qty,remaining_qty,display_order,is_active,is_blank&order=display_order.asc', { service: true }),
     sb('/rest/v1/winners?select=id,name,prize_id,prize_name,won_at&order=won_at.desc', { service: true }),
     sb('/rest/v1/draw_logs?select=id', { service: true }),
   ]);
@@ -44,7 +44,10 @@ module.exports = async function handler(req, res) {
       const prizeId = String(req.body?.prizeId || '');
       if (!prizeId) return send(res, 400, { error: 'invalid_input' });
       const patch = {};
-      if (typeof req.body?.name === 'string' && req.body.name.trim()) patch.name = req.body.name.trim();
+      if (typeof req.body?.name === 'string' && req.body.name.trim()) {
+        if (prizeId === 'blank') return send(res, 400, { error: 'cannot_rename_blank' });
+        patch.name = req.body.name.trim();
+      }
       if (req.body?.totalQty !== undefined) {
         const totalQty = Number(req.body.totalQty);
         if (!Number.isFinite(totalQty) || totalQty < 0) return send(res, 400, { error: 'invalid_input' });
@@ -56,6 +59,7 @@ module.exports = async function handler(req, res) {
     } else if (action === 'delete_prize') {
       const prizeId = String(req.body?.prizeId || '');
       if (!prizeId) return send(res, 400, { error: 'invalid_input' });
+      if (prizeId === 'blank') return send(res, 400, { error: 'cannot_delete_blank' });
       await sb(`/rest/v1/prizes?id=eq.${encodeURIComponent(prizeId)}`, { method: 'DELETE', service: true });
     } else if (action !== 'snapshot') {
       return send(res, 400, { error: 'unknown_action' });
