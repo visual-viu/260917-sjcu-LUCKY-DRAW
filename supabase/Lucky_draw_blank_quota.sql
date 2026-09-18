@@ -33,10 +33,9 @@ set is_blank = true;
 -- 3. 추첨 함수 교체
 -- - 활성 상태이며 remaining_qty > 0 인 모든 행(상품 + 꽝)을 잠그고
 --   remaining_qty 합계를 모수로 가중치 추첨한다.
--- - 꽝 행이 뽑히면 즉시 remaining_qty를 1 차감한다 (꽝은 등록 절차가
---   없으므로 뽑히는 즉시 소모해야 총 개수가 정확히 지켜짐).
--- - 상품 행이 뽑혀도 재고는 차감하지 않는다 (기존과 동일하게
---   register_winner()에서 당첨자 이름을 등록할 때 차감됨).
+-- - 상품/꽝 관계없이 뽑히는 즉시 remaining_qty를 1 차감한다
+--   (기존 draw_lucky_prize()와 동일하게 추첨 시점에 재고를 소모함.
+--   register_winner()는 당첨자 이름만 기록할 뿐 재고를 건드리지 않음).
 -- - 상품+꽝 재고가 모두 0이면 sold_out.
 -- ---------------------------------------------------------
 create or replace function public.draw_lucky_prize()
@@ -89,11 +88,11 @@ begin
     end if;
   end loop;
 
-  if v_chosen_is_blank then
-    update public.prizes
-    set remaining_qty = remaining_qty - 1
-    where id = v_chosen_id;
+  update public.prizes
+  set remaining_qty = remaining_qty - 1
+  where id = v_chosen_id;
 
+  if v_chosen_is_blank then
     insert into public.draw_logs (result, prize_id, prize_name)
     values ('lose', null, null);
 
