@@ -2,7 +2,7 @@ const { sb, send } = require('./_supabase');
 
 async function snapshot() {
   const [prizes, winners, drawLogs] = await Promise.all([
-    sb('/rest/v1/prizes?select=id,name,total_qty,remaining_qty,display_order,is_active,is_blank&order=display_order.asc', { service: true }),
+    sb('/rest/v1/prizes?select=id,name,total_qty,remaining_qty,display_order,is_active,is_blank,is_visible&order=display_order.asc', { service: true }),
     sb('/rest/v1/winners?select=id,name,prize_id,prize_name,won_at&order=won_at.desc', { service: true }),
     sb('/rest/v1/draw_logs?select=id', { service: true }),
   ]);
@@ -54,6 +54,7 @@ module.exports = async function handler(req, res) {
         patch.total_qty = totalQty;
         patch.remaining_qty = totalQty;
       }
+      if (req.body?.visible !== undefined) patch.is_visible = !!req.body.visible;
       if (!Object.keys(patch).length) return send(res, 400, { error: 'invalid_input' });
       await sb(`/rest/v1/prizes?id=eq.${encodeURIComponent(prizeId)}`, { method: 'PATCH', service: true, body: patch });
     } else if (action === 'delete_prize') {
