@@ -78,7 +78,7 @@ insert into public.prizes (
 values
   ('cgv', 'CGV 영화 예매권', 10, 10, 1, true),
   ('boost', '부스트랩 생활용품', 5, 5, 2, true),
-  ('magsafe', '캐릭터 굿즈 맥세이프', 10, 10, 3, true)
+  ('magsafe', '캐릭터 굿즈', 10, 10, 3, true)
 on conflict (id) do update
 set
   name = excluded.name,
